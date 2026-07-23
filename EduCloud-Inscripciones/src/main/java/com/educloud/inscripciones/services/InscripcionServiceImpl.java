@@ -6,8 +6,10 @@ import com.educloud.inscripciones.model.dto.RegistrarInscripcionDto;
 import com.educloud.inscripciones.model.entity.Inscripcion;
 import com.educloud.inscripciones.model.enums.EstadoInscripcion;
 import com.educloud.inscripciones.repository.InscripcionRepository;
+import com.educloud.inscripciones.services.publisher.PublicadorEventosInscripcion;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.NoSuchElementException;
 import java.util.UUID;
@@ -17,9 +19,11 @@ import java.util.UUID;
 public class InscripcionServiceImpl implements I_InscripcionService {
 
     private final InscripcionRepository inscripcionRepository;
+    private final PublicadorEventosInscripcion publisher;
 
 
     @Override
+    @Transactional
     public InscripcionResponseDto registrarInscripcion(RegistrarInscripcionDto dto) {
 
         Inscripcion inscripcion = Inscripcion.builder()
@@ -30,11 +34,14 @@ public class InscripcionServiceImpl implements I_InscripcionService {
 
         inscripcionRepository.saveAndFlush(inscripcion);
 
-
-        return new InscripcionResponseDto(inscripcion.getId(),
+        InscripcionResponseDto result = new InscripcionResponseDto(inscripcion.getId(),
                 inscripcion.getEstudianteId(),
                 inscripcion.getCursoId(),
                 inscripcion.getFechaInscripcion());
+
+        publisher.publicarInscripcionCreada(result);
+
+        return result;
     }
 
     @Override
