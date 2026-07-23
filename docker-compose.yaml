@@ -1,0 +1,61 @@
+services:
+  postgres-db:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=educloud
+    volumes:
+      - postgres_data:/var/lib/postgresql
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+  eureka-server:
+    build:
+      context: ./EduCloud-Eureka
+      dockerfile: Dockerfile
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+  api-gateway:
+    build:
+      context: ./EduCloud-ApiGateway
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - eureka-server
+  certificados-service:
+    build:
+      context: ./EduCloud-Certificados
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - eureka-server
+      - rabbitmq
+      - postgres-db
+  inscripciones-service:
+    build:
+      context: ./EduCloud-Inscripciones
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - eureka-server
+      - rabbitmq
+      - postgres-db
+volumes:
+  postgres_data:
